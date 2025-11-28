@@ -20,69 +20,48 @@ export class App {
   functions = inject(Functions);
   isRoastCardOpen = signal(false);
   username = signal('');
-  selectedPersonality = signal('default');
+  selectedPersonality = signal('public-health-recruiter');
   intensity = signal(3);
 
   personalities = [
     {
-      value: 'default',
-      label: '🎃 Default Ripper',
-      emoji: '🎃',
-      description: 'Classic witty roasting',
+      value: 'public-health-recruiter',
+      label: '🏥 Health Tech Recruiter',
+      emoji: '🏥',
+      description: 'Professional skills matching',
     },
     {
-      value: 'gordon-ramsay',
-      label: '👨‍🍳 Gordon Ramsay',
-      emoji: '👨‍🍳',
-      description: 'Kitchen nightmare style',
+      value: 'epidemiologist',
+      label: '📊 Epidemiologist',
+      emoji: '📊',
+      description: 'Data & analysis focus',
     },
     {
-      value: 'pirate',
-      label: '🏴‍☠️ Pirate Captain',
-      emoji: '🏴‍☠️',
-      description: 'Arrr, matey!',
+      value: 'global-health-advocate',
+      label: '🌍 Global Health Advocate',
+      emoji: '🌍',
+      description: 'SDG & impact focus',
     },
     {
-      value: 'shakespeare',
-      label: '🎭 Shakespeare',
-      emoji: '🎭',
-      description: 'To code or not to code',
+      value: 'health-systems-analyst',
+      label: '⚕️ Systems Analyst',
+      emoji: '⚕️',
+      description: 'Infrastructure & scale',
     },
     {
-      value: 'gen-z',
-      label: '😎 Gen Z',
-      emoji: '😎',
-      description: 'No cap, fr fr',
-    },
-    {
-      value: 'nice-guy',
-      label: '😊 Nice Guy',
-      emoji: '😊',
-      description: 'Backhanded compliments',
-    },
-    {
-      value: 'master-yoda',
-      label: '🧙 Master Yoda',
-      emoji: '🧙',
-      description: 'Backwards speak, I will',
-    },
-    {
-      value: 'kenyan-sheng',
-      label: '🇰🇪 Kenyan Sheng',
-      emoji: '🇰🇪',
-      description: 'Mbaya sana!',
+      value: 'technical-assessor',
+      label: '🔧 Technical Assessor',
+      emoji: '🔧',
+      description: 'Balanced evaluation',
     },
   ];
 
-  intensityLabels: Record<
-    number,
-    { label: string; emoji: string; color: string }
-  > = {
-    1: { label: 'Gentle Ribbing', emoji: '😊', color: 'text-green-400' },
-    2: { label: 'Medium Rare', emoji: '😏', color: 'text-yellow-400' },
-    3: { label: 'Well Done', emoji: '🔥', color: 'text-orange-400' },
-    4: { label: 'Extra Crispy', emoji: '💥', color: 'text-red-400' },
-    5: { label: 'Absolutely Charred', emoji: '☠️', color: 'text-purple-400' },
+  intensityLabels: Record<number, { label: string; emoji: string; color: string }> = {
+    1: { label: 'Brief Overview', emoji: '📋', color: 'text-blue-400' },
+    2: { label: 'Standard Assessment', emoji: '📝', color: 'text-green-400' },
+    3: { label: 'Detailed Analysis', emoji: '🔍', color: 'text-yellow-400' },
+    4: { label: 'Comprehensive Report', emoji: '📊', color: 'text-orange-400' },
+    5: { label: 'In-Depth Evaluation', emoji: '🎯', color: 'text-purple-400' },
   };
 
   roastMutations = injectMutation(() => ({
@@ -92,16 +71,18 @@ export class App {
         'githubGrillerFunction',
       );
       const result = await callable(request);
-      console.log('Roast result:', result);
+      console.log('Assessment result:', result);
       return result.data;
     },
     onSuccess: (data: string) => {
-      console.log('Roast successful:', data);
-      this.isRoastCardOpen.set(true);
+      console.log('Assessment successful:', data);
+      // We don't need to open the modal anymore since we're showing results directly
+      // this.isRoastCardOpen.set(true);
     },
     onError: (error: unknown) => {
-      console.error('Roast failed:', error);
-      alert('Failed to roast the user. Please try again.');
+      console.error('Assessment failed:', error);
+      // We removed the alert since we now have inline error display
+      // alert('Failed to analyze the profile. Please try again.');
     },
   }));
 
@@ -117,7 +98,94 @@ export class App {
 
   closeRoastCard(): void {
     this.isRoastCardOpen.set(false);
+    // Reset the mutation to clear the results and allow re-analysis
+    this.roastMutations.reset();
   }
+
+  downloadResults(): void {
+    const results = this.roastMutations.data();
+    if (!results) return;
+
+    // Clean up the formatting
+    const cleanResults = this.cleanResultsFormatting(results);
+    
+    const blob = new Blob([cleanResults], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `healthtech-assessment-${this.username()}-${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+  }
+
+  shareResults(): void {
+    const results = this.roastMutations.data();
+    if (!results) return;
+
+    // Clean up the formatting
+    const cleanResults = this.cleanResultsFormatting(results);
+    
+    const shareText = `HealthTech Assessment for ${this.username()}:\n\n${cleanResults}\n\nGenerated by HealthTech Scout`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: `HealthTech Assessment - ${this.username()}`,
+        text: shareText,
+        url: window.location.href
+      }).catch(() => {
+        this.fallbackShare(shareText);
+      });
+    } else {
+      this.fallbackShare(shareText);
+    }
+  }
+
+  fallbackShare(text: string): void {
+    // Copy to clipboard as fallback
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Results copied to clipboard! You can now paste them anywhere.');
+    }).catch(() => {
+      // Final fallback - show text in alert
+      alert('Share this assessment:\n\n' + text.substring(0, 1000) + '...');
+    });
+  }
+
+  cleanResultsFormatting(results: string): string {
+  // Clean formatting while preserving structure
+  let clean = results;
+  
+  // Remove markdown but keep text content and structure
+  const cleaningSteps = [
+    // Remove bold and italic markers but keep the text
+    { pattern: /\*\*(.*?)\*\*/g, replacement: '$1' },
+    { pattern: /\*(.*?)\*/g, replacement: '$1' },
+    // Remove other markdown symbols
+    { pattern: /`/g, replacement: '' },
+    { pattern: /~/g, replacement: '' },
+    { pattern: /_/g, replacement: '' },
+    // Remove header markers but keep the text
+    { pattern: /#{1,6}\s?/g, replacement: '' },
+    // Convert links to plain text
+    { pattern: /\[(.*?)\]\(.*?\)/g, replacement: '$1' },
+  ];
+
+  cleaningSteps.forEach(({ pattern, replacement }) => {
+    clean = clean.replace(pattern, replacement);
+  });
+
+  // Fix dates
+  clean = clean
+    .replace(/2024/g, '2025')
+    .replace(/2023/g, '2025')
+    // Clean up excessive whitespace but preserve paragraphs
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/[ ]{2,}/g, ' ')
+    .trim();
+
+  return clean;
+}
 
   getIntensityInfo() {
     return this.intensityLabels[this.intensity()] || this.intensityLabels[3];

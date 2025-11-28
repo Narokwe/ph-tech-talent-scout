@@ -54,22 +54,18 @@ const fetchGithubRepos = ai.defineTool(
     name: 'fetchGithubRepos',
     description:
       'Fetches a list of public repositories for a given GitHub username sorted by pushed date (recently updated).',
-    // Input validation using Zod
     inputSchema: z.object({ username: z.string() }),
-    // Output validation using Zod
     outputSchema: z.array(repoSchema),
   },
   async ({ username }) => {
     console.log(`Fetching repos for ${username}`);
     const response = await fetch(
-      // Fetch the last 15 repos sorted by pushed date
       `https://api.github.com/users/${username}/repos?sort=pushed&per_page=15`,
       {
         headers: {
-          // Use the GitHub token from your .env file
           Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
           Accept: 'application/vnd.github.v3+json',
-          'User-Agent': 'Genkit-Repo-Roaster-Agent', // GitHub requires a User-Agent
+          'User-Agent': 'Genkit-Repo-Roaster-Agent',
         },
       },
     );
@@ -83,8 +79,6 @@ const fetchGithubRepos = ai.defineTool(
     const repos = await response.json();
     const reposParsed = z.array(repoSchema).parse(repos);
 
-    // We only care about a few properties, so we map the response
-    // to match our repoSchema. This keeps the data clean.
     return reposParsed.map((repo) => ({
       name: repo.name,
       language: repo.language,
@@ -115,8 +109,6 @@ const fetchLanguageStats = ai.defineTool(
   },
   async ({ username }) => {
     console.log(`Analyzing language stats for ${username}`);
-
-    // First get all repos (up to 100)
     const response = await fetch(
       `https://api.github.com/users/${username}/repos?per_page=100&type=all`,
       {
@@ -136,7 +128,6 @@ const fetchLanguageStats = ai.defineTool(
     const languages: Record<string, number> = {};
     let totalRepos = 0;
 
-    // Count languages
     for (const repo of repos) {
       if (repo.language) {
         languages[repo.language] = (languages[repo.language] || 0) + 1;
@@ -144,7 +135,6 @@ const fetchLanguageStats = ai.defineTool(
       }
     }
 
-    // Calculate top languages with percentages
     const topLanguages = Object.entries(languages)
       .map(([name, count]) => ({
         name,
@@ -183,7 +173,6 @@ const fetchStarredRepos = ai.defineTool(
   },
   async ({ username }) => {
     console.log(`Fetching starred repos for ${username}`);
-
     const response = await fetch(
       `https://api.github.com/users/${username}/starred?per_page=20&sort=created`,
       {
@@ -249,8 +238,7 @@ const fetchCommitMessages = ai.defineTool(
   },
   async ({ username }) => {
     const response = await fetch(
-      // https://api.github.com/users/mainawycliffe/events
-      `https://api.github.com/users/${username}/events?per_page=100`, // Fetch the last 100 events
+      `https://api.github.com/users/${username}/events?per_page=100`,
       {
         headers: {
           Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
@@ -271,7 +259,6 @@ const fetchCommitMessages = ai.defineTool(
     console.log({ commitsParsed });
     return (
       commitsParsed
-        // Filter for PushEvent type and extract commit messages
         .filter((event) => event.type === 'PushEvent')
         .filter(
           (event) => event.payload.commits && event.payload.commits.length > 0,
@@ -343,6 +330,7 @@ const fetchGithubUserProfile = ai.defineTool(
   },
 );
 
+// Updated githubGrillerFlow with clean formatting
 const githubGrillerFlow = ai.defineFlow(
   {
     name: 'githubGrillerFlow',
@@ -350,22 +338,18 @@ const githubGrillerFlow = ai.defineFlow(
       username: z.string(),
       personality: z
         .enum([
-          'default',
-          'gordon-ramsay',
-          'pirate',
-          'shakespeare',
-          'gen-z',
-          'nice-guy',
-          'master-yoda',
-          'kenyan-sheng',
+          'public-health-recruiter',
+          'epidemiologist', 
+          'global-health-advocate',
+          'health-systems-analyst',
+          'technical-assessor'
         ])
-        .default('default'),
+        .default('public-health-recruiter'),
       intensity: z.number().min(1).max(5).default(3),
     }),
     outputSchema: z.string(),
   },
   async ({ username, personality, intensity }, streamCallack) => {
-    // First, check if the user exists
     const userCheckResponse = await fetch(
       `https://api.github.com/users/${username}`,
       {
@@ -377,7 +361,6 @@ const githubGrillerFlow = ai.defineFlow(
       },
     );
 
-    // Map intensity to temperature (1=0.3, 2=0.5, 3=0.7, 4=0.9, 5=1.2)
     const temperatureMap: Record<number, number> = {
       1: 0.3,
       2: 0.5,
@@ -390,40 +373,36 @@ const githubGrillerFlow = ai.defineFlow(
 
     // Define personality prompts
     const personalityPrompts: Record<string, string> = {
-      default:
-        'You are a witty, sarcastic, and expert code reviewer. Your name is "Ripper - The Roast master".',
-      'gordon-ramsay':
-        'You are Gordon Ramsay in a kitchen, but instead of cooking, you\'re reviewing code. Use cooking metaphors and be brutally honest like Gordon. Call their code "raw", "overcooked", or "an absolute disaster". Use phrases like "What are you doing?!", "This code is so bad, it\'s insulting!", and "Shut it down!"',
-      pirate:
-        'You are a pirate captain reviewing code on the high seas. Use pirate slang like "Arrr", "Shiver me timbers", "Ye scurvy dog", and nautical metaphors. Talk about their code being "shipwrecked", "walking the plank", or "buried treasure" (if anything is good).',
-      shakespeare:
-        'You are William Shakespeare reviewing code in the style of his plays. Use eloquent, theatrical language, iambic pentameter when possible, and references to his works. Be dramatic and poetic with phrases like "To code or not to code", "What light through yonder window breaks? \'Tis bugs.", and "O Romeo, Romeo, wherefore art thou Romeo... and why is this code so terrible?"',
-      'gen-z':
-        'You are a Gen Z developer who speaks in modern slang and memes. Use terms like "no cap", "bussin", "mid", "L code", "ratio", "it\'s giving", "slay" (sarcastically), "touch grass", "main character energy" (negative), and emoji-style descriptions. Be sassy and use internet culture references.',
-      'nice-guy':
-        'You are overly nice and positive, but every compliment is actually a backhanded insult. Use phrases like "It\'s so brave of you to...", "I love how you don\'t let inexperience stop you", "Your code has so much... personality", "Not everyone needs to follow best practices", and "You\'re definitely making... choices." Be passive-aggressive.',
-      'master-yoda':
-        'You are Master Yoda reviewing code. Speak in Yoda\'s distinctive backwards syntax. Use Star Wars references and wisdom about the Force. Say things like "Much to learn, you have", "Strong with bugs, this code is", "Do or do not, there is no try... and trying, you were not", "Fear leads to anger, anger leads to hate, hate leads to spaghetti code". Be wise yet brutally honest.',
-      'kenyan-sheng':
-        'You are a Kenyan developer who roasts in Sheng (Kenyan street slang). Be direct, creative and use Nairobi/Kenya street language humor.',
+      'public-health-recruiter':
+        'You are a professional public health tech recruiter. Your goal is to identify developers whose skills could benefit global health initiatives. Be constructive, professional, and focus on matching technical skills with public health applications. Suggest specific health tech projects they could contribute to based on their expertise. Focus on skills like data analysis, system architecture, mobile development, or AI/ML that could be applied to healthcare challenges.',
+      
+      'epidemiologist':
+        'You are an epidemiologist with tech expertise. Analyze the developer\'s data skills, statistical background, and experience with data-intensive projects. Focus on how their skills could be applied to disease surveillance, health data analysis, public health research, or epidemiological modeling. Look for experience with data visualization, statistical analysis, or machine learning.',
+      
+      'global-health-advocate':
+        'You are a global health advocate focused on Sustainable Development Goals (SDGs), particularly SDG 3 (Good Health and Well-being). Assess how the developer\'s work could contribute to health equity, accessibility, and improving healthcare in underserved communities. Highlight opportunities for impact in areas like telemedicine, health information systems, or mobile health applications.',
+      
+      'health-systems-analyst':
+        'You are a health systems analyst. Evaluate the developer\'s experience with scalable systems, infrastructure, reliability engineering, and security. Focus on how these skills could strengthen healthcare systems, improve health information systems, enhance telemedicine platforms, or ensure data privacy and security in health applications.',
+      
+      'technical-assessor':
+        'You are a technical assessor for health tech organizations. Provide a balanced evaluation of technical strengths and growth areas, specifically in contexts relevant to healthcare applications like data security, compliance, system reliability, and interoperability with health data standards.',
     };
 
     const personalityPrompt =
-      personalityPrompts[personality] || personalityPrompts['default'];
+      personalityPrompts[personality] || personalityPrompts['public-health-recruiter'];
 
-    // Adjust roast intensity based on level
     const intensityGuidelines: Record<number, string> = {
-      1: 'Keep it very gentle and light-hearted. Focus on minor quirks and be mostly encouraging with just a hint of teasing.',
-      2: 'Be mildly sarcastic. Point out some issues but keep it friendly and constructive.',
-      3: 'Standard roasting - be witty and sarcastic with good-natured burns. This is the sweet spot.',
-      4: "Turn up the heat. Be more aggressive and don't hold back, but keep it clever and funny.",
-      5: 'Absolutely savage. Go all out with brutal honesty and devastating burns. No mercy.',
+      1: 'Keep it very concise and high-level. Focus on the most obvious skills and potential health applications.',
+      2: 'Provide a standard professional assessment. Cover main skill areas and suggest 2-3 relevant health tech opportunities.',
+      3: 'Give a detailed analysis. Include specific skill mappings, health domain applications, and actionable recommendations.',
+      4: "Provide comprehensive insights. Include detailed skill analysis, multiple health application areas, and strategic recommendations.",
+      5: 'Deliver an in-depth evaluation. Cover all aspects thoroughly with strategic insights, gap analysis, and long-term potential.',
     };
 
     const intensityGuideline =
       intensityGuidelines[intensity] || intensityGuidelines[3];
 
-    // If user not found, have the LLM generate a roast about the non-existent user
     if (userCheckResponse.status === 404) {
       const { response, stream } = ai.generateStream({
         prompt: `
@@ -431,15 +410,11 @@ const githubGrillerFlow = ai.defineFlow(
           
           ${intensityGuideline}
           
-          The user tried to get roasted but entered a username "${username}" that doesn't exist on GitHub (404 error).
+          The user tried to analyze a GitHub profile but entered a username "${username}" that doesn't exist on GitHub (404 error).
           
-          Roast them for this mistake! Make it funny and creative. Consider these angles:
-          - They can't even type a username correctly
-          - They're trying to roast a ghost/imaginary person
-          - The irony of failing at getting roasted
-          - Suggest they check their spelling but in a sarcastic way
+          Provide a professional response about this issue and suggest they check the username spelling. Mention the importance of accurate data in public health technology contexts.
           
-          Keep it short and punchy (2-3 sentences). Stay in character based on your personality! Use emojis like 💀🎃👻🤦🔥 to keep the Halloween theme.
+          Keep it professional and helpful (2-3 sentences).
         `,
         config: {
           temperature: temperature,
@@ -455,65 +430,53 @@ const githubGrillerFlow = ai.defineFlow(
       return text;
     }
 
-    // Continue with normal roasting flow for valid users
     const { response, stream } = ai.generateStream({
       prompt: `
           ${personalityPrompt}
           
-          Your task is to write a short, funny roast of a developer based on their public GitHub profile and activity.
+          Your task is to provide a professional assessment of a developer's potential contributions to public health technology.
 
           ${intensityGuideline}
 
-          Be playful and clever, not truly mean (but also, don't hold back). Keep it short and punchy, around 3-5 sentences.
+          IMPORTANT FORMATTING RULES:
+          - Use ONLY plain text, NO markdown formatting
+          - NO asterisks (*), hashtags (#), or other markdown symbols
+          - NO bold, italics, or underline formatting
+          - Use clear section headings with emojis instead of markdown
+          - Use line breaks and spacing for readability
+          - Current year is 2025 - use this for any time references
+
+          Be constructive, professional, and data-driven. Focus on matching technical skills with public health applications and suggesting concrete opportunities.
 
           Here's the Github Username: "${username}". 
           
-          You have access to several tools to fetch their GitHub data (profile, repositories, commit messages, language statistics, and starred repositories). Try to use these tools to gather information, but if any tool fails, work with whatever data you successfully retrieved. Even if all tools fail, roast them based on the username alone or the fact that their profile couldn't be accessed!
+          You have access to several tools to fetch their GitHub data (profile, repositories, commit messages, language statistics, and starred repositories). Use these tools to gather information about their skills, experience, and interests.
 
-          Roast them! Consider these angles:
-          
-          **Profile-based roasts:**
-          - Cringe bio or lack thereof
-          - Follower-to-following ratio (are they desperately following everyone?)
-          - Generic or pretentious company names
-          - Blog links that don't work or lead to abandoned WordPress sites
-          - Account age vs activity (old account, no contributions?)
-          - Location-based stereotypes (if appropriate and not offensive)
-          
-          **Repository-based roasts:**
-          - Too many unfinished projects (look at the 'pushed_at' dates)
-          - Weird or unoriginal repository names
-          - A graveyard of forked repos with no original work
-          - Complete lack of stars or engagement
-          - Tutorial follow-alongs disguised as "projects"
-          
-          **Language Statistics roasts:**
-          - Over-reliance on one language (e.g., "99% JavaScript - we get it, you're 'full-stack'")
-          - Language choices that don't match their aspirations
-          - Trendy language hopping without depth
-          
-          **Starred Repository roasts:**
-          - Stars advanced ML/AI repos but only creates basic CRUD apps
-          - Thousands of stars but zero original contributions
-          - Starring pattern reveals their unrealistic ambitions vs actual skill level
-          - Stars everything but contributes to nothing
-          
-          **Commit-based roasts:**
-          - Terrible commit messages ("fixed stuff", "asdf", ".")
-          - Inconsistent coding patterns
-          - Too many "fix" commits in a row
+          Provide a professional assessment covering:
 
-          **If data fetching fails:**
-          - Roast them for having an inaccessible profile
-          - Make jokes about their username
-          - Roast them for hiding their terrible code behind private repos
-          - Question if they even exist or are just a ghost account
+          🛠️ TECHNICAL SKILLS ANALYSIS
+          - Technical strengths relevant to health tech
+          - Data and analysis capabilities  
+          - System architecture experience
+          - Programming language proficiency
 
-          Return the roast as a single string, no other text or explanation needed. Stay in character based on your personality! Work with whatever data you can get - don't mention that tools failed, just be creative with what you have!
+          🏥 HEALTH TECH APPLICATIONS
+          - Potential contributions to disease surveillance systems
+          - Health data management and analysis
+          - Telemedicine and mobile health applications
+          - Public health research tools
+          - Health information systems
+
+          📈 RECOMMENDATIONS & OPPORTUNITIES
+          - Specific health tech projects they could contribute to
+          - Skills development suggestions for health tech
+          - Potential impact areas in global health
+          - Open source health projects to explore
+
+          Return the assessment as a clean, well-structured professional report using only plain text. Focus on actionable insights and practical recommendations.
       `,
       tools: [
         fetchGithubRepos,
-        // fetchCommitMessages,
         fetchGithubUserProfile,
         fetchLanguageStats,
         fetchStarredRepos,

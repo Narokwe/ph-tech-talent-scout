@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "github-griller"
-  }
+    "default": "ph-tech-talent-scout"
+  },
+  "targets": {},
+  "etags": {}
 }

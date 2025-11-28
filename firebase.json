@@ -1,31 +1,16 @@
 {
-  "functions": [
-    {
-      "source": "dist/apps/genkit",
-      "codebase": "default",
-      "ignore": [
-        "node_modules",
-        ".git",
-        "package-lock.json",
-        "pnpm-lock.yaml",
-        "yarn.lock",
-        "bun.lockb",
-        "firebase-debug.log",
-        "firebase-debug.*.log"
-      ],
-      "predeploy": [
-        "pnpm nx run genkit:build",
-        "echo 'Functions built successfully.'"
-      ]
-    }
-  ],
-  "emulators": {
-    "functions": {
-      "port": 5001
-    },
-    "ui": {
-      "enabled": true
-    },
-    "singleProjectMode": true
+  "hosting": {
+    "public": "dist/apps/web/browser",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
   }
 }

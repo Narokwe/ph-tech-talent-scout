@@ -11,12 +11,12 @@ import {
 } from '@tanstack/angular-query-experimental';
 
 const firebaseConfig = {
-  apiKey: 'AIzaSyBTy1PhC64E8EFv3EFFN_BxPANEMQAgsmc',
-  authDomain: 'github-griller.firebaseapp.com',
-  projectId: 'github-griller',
-  storageBucket: 'github-griller.firebasestorage.app',
-  messagingSenderId: '29834312711',
-  appId: '1:29834312711:web:cf038fda9ea229b12dfea2',
+  apiKey: "AIzaSyChLZ7SaxA7xytEFzjI2brBeovaQCRHUJA",
+  authDomain: "ph-tech-talent-scout.firebaseapp.com",
+  projectId: "ph-tech-talent-scout",
+  storageBucket: "ph-tech-talent-scout.firebasestorage.app",
+  messagingSenderId: "528589818488",
+  appId: "1:528589818488:web:33671a963e33cfe31e3b8d"
 };
 
 const queryClient = new QueryClient({});

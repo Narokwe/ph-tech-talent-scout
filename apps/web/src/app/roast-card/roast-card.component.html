@@ -1,147 +1,20 @@
-@let roastResult = results();
-
-<!-- Modal Backdrop -->
-<div
-  (click)="closeCard()"
-  (keydown.escape)="closeCard()"
-  [class.hidden]="!isModalOpen()"
-  class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-fade-in"
-  tabindex="0"
-  role="dialog"
-  aria-modal="true"
->
-  <!-- Roast Card -->
-  <div
-    #roastCard
-    (click)="$event.stopPropagation()"
-    (keydown)="$event.stopPropagation()"
-    class="trickster-card w-full max-w-3xl p-8 md:p-12 relative animate-scale-in"
-    tabindex="-1"
-  >
-    <!-- Close Button -->
-    <button
-      type="button"
-      (click)="closeCard()"
-      class="absolute -top-4 -right-4 bg-gradient-to-r from-emerald-600 to-cyan-500 hover:from-emerald-500 hover:to-cyan-400 text-white rounded-full p-3 shadow-2xl transition-all duration-300 hover:scale-110 hover:rotate-90 z-10"
-      aria-label="Close"
-    >
-      <svg
-        class="w-6 h-6"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M6 18L18 6M6 6l12 12"
-        />
-      </svg>
-    </button>
-
-    <!-- Badge -->
-    <div class="text-center mb-8">
-      <div
-        class="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-cyan-500 text-white px-6 py-2 rounded-full font-bold shadow-lg mb-4"
-      >
-        <span class="text-2xl animate-wiggle">{{ personality() }}</span>
-        <span class="text-lg">Ripper - Github Griller</span>
-      </div>
-
-      <!-- Intensity Badge -->
-      <div
-        class="inline-flex items-center gap-2 bg-slate-800/80 text-emerald-300 px-4 py-1 rounded-full text-sm font-semibold"
-      >
-        <span class="text-xl">{{ intensityEmoji() }}</span>
-        <span>Intensity Level</span>
-      </div>
-    </div>
-
-    <!-- Roast Text -->
-    <div class="my-10">
-      <blockquote
-        class="text-center text-xl md:text-2xl lg:text-3xl font-bold text-cyan-300 leading-relaxed whitespace-pre-wrap italic border-l-4 border-emerald-500 pl-6 py-4 bg-slate-900/50 rounded-r-2xl"
-      >
-        "{{ roastResult }}"
-      </blockquote>
-    </div>
-
-    <!-- Decorative Flames -->
-    <div class="flex justify-center gap-6 my-8">
-      <span class="text-5xl animate-float">🔥</span>
-      <span class="text-6xl animate-float" style="animation-delay: 0.3s"
-        >💀</span
-      >
-      <span class="text-5xl animate-float" style="animation-delay: 0.6s"
-        >🔥</span
-      >
-    </div>
-
-    <!-- Action Buttons -->
-    <div class="flex flex-wrap justify-center gap-4 mt-8">
-      <button
-        type="button"
-        (click)="downloadRoastCard()"
-        class="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-cyan-500 hover:from-emerald-500 hover:to-cyan-400 text-white font-bold rounded-xl shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl"
-      >
-        <svg
-          class="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-          />
-        </svg>
-        <span>Download</span>
-      </button>
-
-      <button
-        type="button"
-        (click)="shareRoastCard()"
-        class="flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl border-2 border-emerald-500/50 hover:border-cyan-400 shadow-lg transition-all duration-300 hover:scale-105"
-      >
-        <svg
-          class="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-          />
-        </svg>
-        <span>Share</span>
-      </button>
-
-      <button
-        type="button"
-        (click)="closeCard()"
-        class="flex items-center gap-2 px-6 py-3 bg-slate-800 hover:bg-slate-700 text-gray-300 hover:text-white font-bold rounded-xl border-2 border-gray-600 hover:border-gray-500 shadow-lg transition-all duration-300 hover:scale-105"
-      >
-        <svg
-          class="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-          />
-        </svg>
-        <span>Roast Again</span>
-      </button>
-    </div>
+<!-- Update the badge section -->
+<div class="text-center mb-8">
+  <div class="inline-flex items-center gap-2 bg-gradient-to-r from-green-600 to-blue-500 text-white px-6 py-2 rounded-full font-bold shadow-lg mb-4">
+    <span class="text-2xl animate-wiggle">{{ personality() }}</span>
+    <span class="text-lg">HealthTech Scout</span>
   </div>
+
+  <!-- Analysis Level Badge -->
+  <div class="inline-flex items-center gap-2 bg-slate-800/80 text-green-300 px-4 py-1 rounded-full text-sm font-semibold">
+    <span class="text-xl">{{ intensityEmoji() }}</span>
+    <span>Analysis Level</span>
+  </div>
+</div>
+
+<!-- Replace decorative elements with professional ones -->
+<div class="flex justify-center gap-6 my-8">
+  <span class="text-5xl animate-float">🏥</span>
+  <span class="text-6xl animate-float" style="animation-delay: 0.3s">🌍</span>
+  <span class="text-5xl animate-float" style="animation-delay: 0.6s">💻</span>
 </div>
